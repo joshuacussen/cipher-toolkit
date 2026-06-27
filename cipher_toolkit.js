@@ -305,6 +305,10 @@
 
     // Fill left-to-right, top-to-bottom, wrapping to a new row once
     // `rows` is reached - i.e. a plain rectangular fill, not a zigzag.
+    // Fixed-size columns (not 1fr) so cells stay the same size
+    // regardless of how many columns there are - otherwise fewer
+    // columns (more rows) would stretch to fill the same container
+    // width, making the cells visibly grow.
     const cols = Math.ceil(text.length / rows);
     grid.style.gridTemplateColumns = "repeat(" + cols + ", 1.6rem)";
 
@@ -401,10 +405,11 @@
   const corner = document.createElement("td");
   corner.className = "corner";
   headerRow.appendChild(corner);
-  A.split("").forEach(letter => {
+  A.split("").forEach((letter, c) => {
     const th = document.createElement("td");
     th.className = "col-head";
     th.textContent = letter;
+    th.setAttribute("data-col-head", c); // so hover can find this header by column index
     headerRow.appendChild(th);
   });
   vigenereTable.appendChild(headerRow);
@@ -416,15 +421,40 @@
     const rowHead = document.createElement("td");
     rowHead.className = "row-head";
     rowHead.textContent = A[r];
+    rowHead.setAttribute("data-row-head", r); // so hover can find this header by row index
     row.appendChild(rowHead);
 
     for (let c = 0; c < 26; c++) {
       const cell = document.createElement("td");
       cell.textContent = A[(c + r) % 26];
+      cell.className = "vig-cell";
+      cell.setAttribute("data-row", r);
+      cell.setAttribute("data-col", c);
       row.appendChild(cell);
     }
     vigenereTable.appendChild(row);
   }
+
+  // Hover guide: highlight the hovered cell plus its row and column
+  // headers, so it's easy to see which row/column you're tracing.
+  // Delegated on the table itself rather than per-cell, since that's
+  // one listener instead of 676.
+  vigenereTable.addEventListener("mouseover", (e) => {
+    const cell = e.target.closest("td.vig-cell");
+    if(!cell) return;
+    cell.classList.add("vig-active");
+    const rowHead = vigenereTable.querySelector(`[data-row-head="${cell.dataset.row}"]`);
+    const colHead = vigenereTable.querySelector(`[data-col-head="${cell.dataset.col}"]`);
+    if(rowHead) rowHead.classList.add("head-active");
+    if(colHead) colHead.classList.add("head-active");
+  });
+
+  vigenereTable.addEventListener("mouseout", (e) => {
+    const cell = e.target.closest("td.vig-cell");
+    if(!cell) return;
+    cell.classList.remove("vig-active");
+    vigenereTable.querySelectorAll(".head-active").forEach(el => el.classList.remove("head-active"));
+  });
 
   // ===================== RAIL FENCE DEMO =====================
   // This demo works in the decrypt direction: we start from a fixed
