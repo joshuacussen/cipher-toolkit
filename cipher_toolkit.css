@@ -343,6 +343,7 @@
   }
 
   .trans-controls > div{ flex:1; min-width:200px; }
+  .trans-controls > div:has(.rows-stepper){ flex:0 0 auto; min-width:0; }
 
   .rows-stepper{
     display:flex;
@@ -494,7 +495,7 @@
     border:1px solid var(--rule);
     border-radius:4px;
     aspect-ratio:1;
-    min-width:1.7rem;
+    min-width:1.6rem;
     display:flex;
     align-items:center;
     justify-content:center;
@@ -508,9 +509,8 @@
 
   .rail-cell.empty{
     background:transparent;
-    border:1px dashed var(--rule);
+    border:1px dashed var(--brass);
     color:var(--ink-soft);
-    opacity:0.55;
     font-weight:400;
   }
 
