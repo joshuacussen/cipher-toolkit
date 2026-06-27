@@ -306,7 +306,7 @@
     // Fill left-to-right, top-to-bottom, wrapping to a new row once
     // `rows` is reached - i.e. a plain rectangular fill, not a zigzag.
     const cols = Math.ceil(text.length / rows);
-    grid.style.gridTemplateColumns = "repeat(" + cols + ", minmax(1.6rem, 1fr))";
+    grid.style.gridTemplateColumns = "repeat(" + cols + ", 1.6rem)";
 
     for(let r = 0; r < rows; r++){
       for(let c = 0; c < cols; c++){
