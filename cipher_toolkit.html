@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cipher Toolkit</title>
+<link rel="stylesheet" href="cipher_toolkit.css">
+</head>
+<body>
+<main>
+
+  <div class="page-header">
+    <div class="intro">
+      <h1>Cipher Toolkit</h1>
+      <p class="lede">Six tools for exploring classical ciphers: Caesar, substitution, transposition, rail fence, Atbash, and Vigen&egrave;re.</p>
+    </div>
+    <div class="paper-callout">
+      <p class="callout-label">Prefer paper?</p>
+      <p>Working on paper instead? <a href="#">Download the printable toolkit (PDF)</a>.</p>
+    </div>
+  </div>
+
+  <div class="toolkit-grid">
+
+    <!-- ===================== CAESAR WHEEL ===================== -->
+    <section class="card area-wheel">
+      <span class="tag">Caesar cipher</span>
+      <h2>Caesar wheel</h2>
+      <p class="help">Every letter shifts forward through the alphabet by the same fixed amount. Turn the wheel to try a shift, then check the mapping below.</p>
+
+      <div class="wheel-wrap">
+        <svg id="wheelSvg" viewBox="0 0 300 300">
+          <circle cx="150" cy="150" r="138" fill="none" stroke="#DCD3C0" stroke-width="1"/>
+          <circle cx="150" cy="150" r="95" fill="#9C7A3C" />
+          <g id="outerRingGroup"></g>
+          <g id="innerRingGroup"></g>
+          <polygon points="150,5 142,20 158,20" fill="#C1602E" />
+        </svg>
+
+        <div class="wheel-controls">
+          <button id="shiftDown" aria-label="Decrease shift">&minus;</button>
+          <input type="range" id="shiftSlider" min="-25" max="25" value="3" step="1" aria-label="Caesar shift amount">
+          <button id="shiftUp" aria-label="Increase shift">+</button>
+        </div>
+
+        <div class="shift-readout">
+          <div id="shiftLabel">Shift: +3</div>
+          <div class="equiv" id="shiftEquiv"></div>
+        </div>
+
+        <div class="mapping-row">
+          <table class="alpha-map" id="mapTable"></table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== SUBSTITUTION MAPPER ===================== -->
+    <section class="card area-sub">
+      <span class="tag">Substitution cipher</span>
+      <h2>Substitution mapper</h2>
+      <p class="help">Each letter has been swapped for a different letter&mdash;not necessarily a fixed shift. Guess a mapping below for any letters you've worked out; the preview updates as you go. No two ciphertext letters can map to the same guess.</p>
+
+      <div class="sub-grid" id="subGrid"></div>
+
+      <label class="field-label" for="subCipherInput">Paste the ciphertext here</label>
+      <textarea id="subCipherInput" rows="2" placeholder="Paste a message to test your guesses against it"></textarea>
+
+      <div class="preview-box" id="subPreview">Your working decode will appear here.</div>
+      <div class="collision-note" id="subCollisionNote"></div>
+    </section>
+
+    <!-- ===================== LETTER FREQUENCY ===================== -->
+    <section class="card area-freq">
+      <span class="tag">Reference</span>
+      <h2>Letter frequency</h2>
+      <p class="help">How often each letter turns up in ordinary English&mdash;useful right here, against the substitution cipher.</p>
+      <div id="freqChart"></div>
+    </section>
+
+    <!-- ===================== TRANSPOSITION GRID ===================== -->
+    <section class="card area-trans">
+      <span class="tag">Transposition cipher</span>
+      <h2>Transposition grid</h2>
+      <p class="help">The letters haven't changed&mdash;only their order has. Lay the ciphertext into a grid and see if reading it a different way (down a column, in a zigzag) reveals anything.</p>
+
+      <div class="trans-controls">
+        <div>
+          <label class="field-label" for="transCipherInput">Paste the ciphertext here (spaces are ignored)</label>
+          <input type="text" id="transCipherInput" placeholder="e.g. THISISJUSTADEMOEXAMPLE" value="THISISJUSTADEMOEXAMPLE">
+        </div>
+        <div>
+          <label class="field-label">Number of rows</label>
+          <div class="rows-stepper">
+            <button id="rowsDown" aria-label="Fewer rows">&minus;</button>
+            <span id="rowsValue">3</span>
+            <button id="rowsUp" aria-label="More rows">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="transGrid"></div>
+      <p class="help" style="margin-top:0.6rem; margin-bottom:0;">That's just a worked example to show how the grid behaves&mdash;replace it with your own ciphertext above.</p>
+    </section>
+
+    <!-- ===================== RAIL FENCE DEMO ===================== -->
+    <section class="card area-railfence">
+      <span class="tag">Rail fence cipher</span>
+      <h2>Rail fence pattern</h2>
+      <p class="help">A message can be reordered by writing it in a zigzag down and up across several rails, then reading each rail off left to right. To reverse it, place the letters back into the same zigzag shape and read them off in zigzag order&mdash;but only the correct number of rails will produce something readable. Try the example below with different rail counts.</p>
+
+      <div class="trans-controls">
+        <div>
+          <label class="field-label">Number of rails</label>
+          <div class="rows-stepper">
+            <button id="railsDown" aria-label="Fewer rails">&minus;</button>
+            <span id="railsValue">3</span>
+            <button id="railsUp" aria-label="More rails">+</button>
+          </div>
+        </div>
+      </div>
+
+      <p class="help" style="margin-bottom:0.3rem;">Example ciphertext: <strong id="railPhraseLabel"></strong></p>
+      <div class="rail-demo-scroll">
+        <div id="railGrid"></div>
+      </div>
+
+      <div class="rail-readout">
+        Reading the zigzag gives: <strong id="railReadout"></strong>
+      </div>
+    </section>
+
+    <!-- ===================== ATBASH REFERENCE ===================== -->
+    <section class="card area-atbash">
+      <span class="tag">Atbash cipher</span>
+      <h2>Mirror alphabet</h2>
+      <p class="help">Every letter swaps with its mirror image in the alphabet. No key needed&mdash;just read straight off this strip.</p>
+      <table class="atbash-table" id="atbashTable"></table>
+    </section>
+
+    <!-- ===================== VIGENÈRE REFERENCE ===================== -->
+    <section class="card area-vigenere">
+      <span class="tag">Vigen&egrave;re cipher</span>
+      <h2>Tabula recta</h2>
+      <p class="help">Used when you're given a keyword instead of a fixed shift&mdash;line the keyword up underneath the message, repeating it for the full length. For each letter: find the row labelled with that letter's keyword letter, then look along it to the column labelled with the plaintext letter&mdash;the cell where they meet is the ciphertext letter. (Decrypting works the same way in reverse: find the ciphertext letter in that row, then read off its column heading.)</p>
+      <div class="vigenere-scroll">
+        <table class="vigenere-table" id="vigenereTable"></table>
+      </div>
+    </section>
+
+  </div>
+
+</main>
+
+<script src="cipher_toolkit.js"></script>
+</body>
+</html>
