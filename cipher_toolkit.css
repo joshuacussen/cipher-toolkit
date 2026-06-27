@@ -461,13 +461,11 @@
  /* Zebra striping: every other data row gets a faint tint, so it's
    easier to track a row horizontally across 26 columns. */
  table.vigenere-table tr:nth-child(even) td:not(.row-head):not(.corner){
-   background: var(--paper-raised);
+   background: var(--rule); 
  }
 
- /* Hover guide: highlight the cell you're on, plus its row and column
-   headers, so it's easy to see which row/column you're tracing. */
  table.vigenere-table td.vig-active{
-   background: var(--brass-light);
+   background: var(--brass-light) !important;
    font-weight: 700;
  }
 
