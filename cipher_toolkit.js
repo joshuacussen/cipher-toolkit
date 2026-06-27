@@ -536,7 +536,7 @@
 
     const gridEl = document.getElementById("railGrid");
     gridEl.innerHTML = "";
-    gridEl.style.gridTemplateColumns = "repeat(" + length + ", minmax(1.7rem, 1fr))";
+    gridEl.style.gridTemplateColumns = "repeat(" + length + ", 1.6rem)";
     gridEl.style.gridTemplateRows = "repeat(" + railCount + ", auto)";
 
     // Draw one cell per (rail, column) pair: filled where a letter
