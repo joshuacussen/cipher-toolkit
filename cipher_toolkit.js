@@ -311,25 +311,20 @@
 
   document.getElementById("subCipherInput").addEventListener("input", renderSubPreview);
 
-  // ===================== TRANSPOSITION GRID =====================
-  // A fixed teaching example showing how columnar transposition works:
-  // letters are written into a grid row by row, then read out column
-  // by column. The person adjusts the number of columns to see how the
-  // grid changes - the actual solving of their ciphertext is left to them.
-  const TRANS_EXAMPLE = "HEREISASECRETMESSAGE";
-  const rowsValueEl = document.getElementById("rowsValue");
-  let rows = 3;
+  // ===================== TRANSPOSITION — ENCRYPT =====================
+  // The person types a plaintext candidate; the grid shows how it gets
+  // laid in row by row, and the readout shows the ciphertext produced
+  // by reading columns left to right. If the output matches their
+  // ciphertext, they've found the right column count.
 
-  function renderTransGrid(){
-    const text = TRANS_EXAMPLE;
-    const grid = document.getElementById("transGrid");
-    grid.innerHTML = "";
+  function buildTransGrid(text, cols, gridEl, readoutEl, encrypt){
+    gridEl.innerHTML = "";
+    if(readoutEl) readoutEl.textContent = "";
+    if(!text){ gridEl.style.gridTemplateColumns = ""; return; }
 
-    // `rows` here controls number of columns (we renamed the label in the
-    // HTML to "columns" but kept the variable name for minimal diff).
-    const cols = rows;
     const numRows = Math.ceil(text.length / cols);
-    grid.style.gridTemplateColumns = "repeat(" + cols + ", 1.6rem)";
+    const padded = text.padEnd(numRows * cols, "");
+    gridEl.style.gridTemplateColumns = "repeat(" + cols + ", 1.6rem)";
 
     for(let r = 0; r < numRows; r++){
       for(let c = 0; c < cols; c++){
@@ -337,23 +332,74 @@
         const cell = document.createElement("div");
         cell.className = "trans-cell";
         cell.textContent = idx < text.length ? text[idx] : "";
-        grid.appendChild(cell);
+        gridEl.appendChild(cell);
       }
+    }
+
+    if(encrypt && readoutEl){
+      // Read columns left-to-right to produce ciphertext
+      let ct = "";
+      for(let c = 0; c < cols; c++){
+        for(let r = 0; r < numRows; r++){
+          const idx = r * cols + c;
+          if(idx < text.length) ct += text[idx];
+        }
+      }
+      // Group into 5-letter blocks
+      readoutEl.textContent = "Encrypted: " + ct.match(/.{1,5}/g).join(" ");
     }
   }
 
-  document.getElementById("rowsUp").addEventListener("click", () => {
-    rows = Math.min(8, rows + 1);
-    rowsValueEl.textContent = rows;
-    renderTransGrid();
+  // Encrypt widget
+  let transEncCols = 3;
+  const transEncColsEl = document.getElementById("transEncColsValue");
+  const transEncInput = document.getElementById("transEncInput");
+  const transEncGrid = document.getElementById("transEncGrid");
+  const transEncReadout = document.getElementById("transEncReadout");
+
+  function renderTransEnc(){
+    const text = transEncInput.value.replace(/\s+/g,"").toUpperCase();
+    buildTransGrid(text, transEncCols, transEncGrid, transEncReadout, true);
+  }
+
+  transEncInput.addEventListener("input", renderTransEnc);
+  document.getElementById("transEncColsUp").addEventListener("click", () => {
+    transEncCols = Math.min(10, transEncCols + 1);
+    transEncColsEl.textContent = transEncCols;
+    renderTransEnc();
   });
-  document.getElementById("rowsDown").addEventListener("click", () => {
-    rows = Math.max(2, rows - 1);
-    rowsValueEl.textContent = rows;
-    renderTransGrid();
+  document.getElementById("transEncColsDown").addEventListener("click", () => {
+    transEncCols = Math.max(2, transEncCols - 1);
+    transEncColsEl.textContent = transEncCols;
+    renderTransEnc();
   });
 
-  renderTransGrid();
+  // ===================== TRANSPOSITION — DECRYPT =====================
+  // The person pastes ciphertext; the grid lays it out row by row at
+  // the chosen column count. When the column count matches what was
+  // used to encrypt, reading down each column reveals the plaintext.
+
+  let transDecCols = 3;
+  const transDecColsEl = document.getElementById("transDecColsValue");
+  const transDecInput = document.getElementById("transDecInput");
+  const transDecGrid = document.getElementById("transDecGrid");
+
+  function renderTransDec(){
+    const text = transDecInput.value.replace(/\s+/g,"").toUpperCase();
+    buildTransGrid(text, transDecCols, transDecGrid, null, false);
+  }
+
+  transDecInput.addEventListener("input", renderTransDec);
+  document.getElementById("transDecColsUp").addEventListener("click", () => {
+    transDecCols = Math.min(10, transDecCols + 1);
+    transDecColsEl.textContent = transDecCols;
+    renderTransDec();
+  });
+  document.getElementById("transDecColsDown").addEventListener("click", () => {
+    transDecCols = Math.max(2, transDecCols - 1);
+    transDecColsEl.textContent = transDecCols;
+    renderTransDec();
+  });
 
   // ===================== FREQUENCY CHART =====================
   // Static reference data: standard letter frequencies in English
@@ -474,48 +520,23 @@
     vigenereTable.querySelectorAll(".head-active").forEach(el => el.classList.remove("head-active"));
   });
 
-  // ===================== RAIL FENCE DEMO =====================
-  // This demo works in the encrypt direction: the person types a
-  // plaintext phrase and picks a rail count, and the zigzag diagram
-  // shows how the letters get rearranged. Understanding the encrypt
-  // direction is what gives you the insight to reverse it yourself.
-  const RAIL_DEFAULT = "MEETMEATMIDNIGHT";
-  let railCount = 3;
-  const railsValueEl = document.getElementById("railsValue");
-  document.getElementById("railPhraseLabel").textContent = RAIL_DEFAULT;
+  // ===================== RAIL FENCE — ENCRYPT =====================
+  // Shows the zigzag diagram. Falls back to MEETMEATMIDNIGHT when the
+  // input is empty so there's always something illustrative on screen.
 
-  /**
-   * Returns, for each character position in a message of the given
-   * length, which rail (0-indexed) that position sits on when the
-   * message is written in a zigzag across `rails` rows.
-   *
-   * The zigzag bounces between rail 0 and rail (rails - 1), so the
-   * pattern repeats every `cycle` positions, where cycle is twice the
-   * number of "steps" between the top and bottom rail.
-   */
   function railIndexPattern(length, rails){
-    if(rails === 1){
-      return new Array(length).fill(0);
-    }
+    if(rails === 1) return new Array(length).fill(0);
     const cycle = 2 * (rails - 1);
     const pattern = [];
     for(let i = 0; i < length; i++){
-      const positionInCycle = i % cycle;
-      // first half of the cycle counts up (0, 1, 2, ...), second half
-      // counts back down (..., 2, 1, 0) - that's the "fence" shape.
-      pattern.push(positionInCycle < rails ? positionInCycle : cycle - positionInCycle);
+      const pos = i % cycle;
+      pattern.push(pos < rails ? pos : cycle - pos);
     }
     return pattern;
   }
 
-  /**
-   * Encodes a plaintext using the rail fence cipher at the given rail count.
-   * Shows the zigzag layout and the resulting ciphertext, so the person can
-   * see how the scrambling works — they then reverse this process themselves.
-   */
   function encodeRailFence(plaintext, rails){
     const railOf = railIndexPattern(plaintext.length, rails);
-    // Read off rails in order to produce the ciphertext.
     let ciphertext = "";
     for(let r = 0; r < rails; r++){
       for(let c = 0; c < plaintext.length; c++){
@@ -525,24 +546,24 @@
     return { railOf, ciphertext };
   }
 
-  /**
-   * Renders the zigzag diagram for the current rail count and updates
-   * the "reading the rails gives" readout with the resulting ciphertext.
-   */
-  function renderRailFence(){
-    const plaintext = RAIL_DEFAULT;
-    const { railOf, ciphertext } = encodeRailFence(plaintext, railCount);
+  const RAIL_ENC_DEFAULT = "MEETMEATMIDNIGHT";
+  let railEncCount = 3;
+  const railEncValueEl = document.getElementById("railEncValue");
+  const railEncInput = document.getElementById("railEncInput");
+
+  function renderRailEnc(){
+    const plaintext = railEncInput.value.replace(/\s+/g,"").toUpperCase() || RAIL_ENC_DEFAULT;
+    const gridEl = document.getElementById("railEncGrid");
+    const readout = document.getElementById("railEncReadout");
+    gridEl.innerHTML = "";
+
+    const { railOf, ciphertext } = encodeRailFence(plaintext, railEncCount);
     const length = plaintext.length;
 
-    const gridEl = document.getElementById("railGrid");
-    gridEl.innerHTML = "";
     gridEl.style.gridTemplateColumns = "repeat(" + length + ", 1.6rem)";
-    gridEl.style.gridTemplateRows = "repeat(" + railCount + ", auto)";
+    gridEl.style.gridTemplateRows = "repeat(" + railEncCount + ", auto)";
 
-    // Draw one cell per (rail, column) pair: filled where a letter
-    // landed, otherwise an empty placeholder so the zigzag shape itself
-    // stays visible.
-    for(let r = 0; r < railCount; r++){
+    for(let r = 0; r < railEncCount; r++){
       for(let c = 0; c < length; c++){
         const cell = document.createElement("div");
         if(railOf[c] === r){
@@ -550,26 +571,94 @@
           cell.textContent = plaintext[c];
         } else {
           cell.className = "rail-cell empty";
-          cell.textContent = "\u00B7"; // middle dot, just a visual placeholder
+          cell.textContent = "\u00B7";
         }
         gridEl.appendChild(cell);
       }
     }
 
-    document.getElementById("railReadout").textContent = ciphertext;
+    readout.textContent = ciphertext.match(/.{1,5}/g).join(" ");
   }
 
-  document.getElementById("railsUp").addEventListener("click", () => {
-    railCount = Math.min(6, railCount + 1);
-    railsValueEl.textContent = railCount;
-    renderRailFence();
+  railEncInput.addEventListener("input", renderRailEnc);
+  document.getElementById("railEncUp").addEventListener("click", () => {
+    railEncCount = Math.min(6, railEncCount + 1);
+    railEncValueEl.textContent = railEncCount;
+    renderRailEnc();
   });
-  document.getElementById("railsDown").addEventListener("click", () => {
-    railCount = Math.max(2, railCount - 1);
-    railsValueEl.textContent = railCount;
-    renderRailFence();
+  document.getElementById("railEncDown").addEventListener("click", () => {
+    railEncCount = Math.max(2, railEncCount - 1);
+    railEncValueEl.textContent = railEncCount;
+    renderRailEnc();
   });
 
-  renderRailFence();
+  renderRailEnc();
+
+  // ===================== RAIL FENCE — DECRYPT =====================
+  // Paste ciphertext and try rail counts; shows the decoded result.
+
+  function decodeRailFence(ciphertext, rails){
+    const railOf = railIndexPattern(ciphertext.length, rails);
+    const grid = new Array(ciphertext.length).fill(null);
+    let nextChar = 0;
+    for(let r = 0; r < rails; r++){
+      for(let c = 0; c < ciphertext.length; c++){
+        if(railOf[c] === r){ grid[c] = ciphertext[nextChar]; nextChar++; }
+      }
+    }
+    return grid.join("");
+  }
+
+  let railDecCount = 3;
+  const railDecValueEl = document.getElementById("railDecValue");
+  const railDecInput = document.getElementById("railDecInput");
+
+  function renderRailDec(){
+    const ciphertext = railDecInput.value.replace(/\s+/g,"").toUpperCase();
+    const gridEl = document.getElementById("railDecGrid");
+    const readout = document.getElementById("railDecReadout");
+    gridEl.innerHTML = "";
+
+    if(!ciphertext){
+      gridEl.style.gridTemplateColumns = "";
+      readout.textContent = "\u2014";
+      return;
+    }
+
+    const plaintext = decodeRailFence(ciphertext, railDecCount);
+    const railOf = railIndexPattern(ciphertext.length, railDecCount);
+    const length = ciphertext.length;
+
+    gridEl.style.gridTemplateColumns = "repeat(" + length + ", 1.6rem)";
+    gridEl.style.gridTemplateRows = "repeat(" + railDecCount + ", auto)";
+
+    for(let r = 0; r < railDecCount; r++){
+      for(let c = 0; c < length; c++){
+        const cell = document.createElement("div");
+        if(railOf[c] === r){
+          cell.className = "rail-cell filled";
+          cell.textContent = plaintext[c];
+        } else {
+          cell.className = "rail-cell empty";
+          cell.textContent = "\u00B7";
+        }
+        gridEl.appendChild(cell);
+      }
+    }
+
+    readout.textContent = plaintext;
+  }
+
+  railDecInput.addEventListener("input", renderRailDec);
+  document.getElementById("railDecUp").addEventListener("click", () => {
+    railDecCount = Math.min(6, railDecCount + 1);
+    railDecValueEl.textContent = railDecCount;
+    renderRailDec();
+  });
+  document.getElementById("railDecDown").addEventListener("click", () => {
+    railDecCount = Math.max(2, railDecCount - 1);
+    railDecValueEl.textContent = railDecCount;
+    renderRailDec();
+  });
 
 })();

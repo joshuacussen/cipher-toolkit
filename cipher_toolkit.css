@@ -149,9 +149,11 @@
       "wheel"
       "sub"
       "freq"
-      "trans"
-      "railfence"
       "atbash"
+      "rail-enc"
+      "rail-dec"
+      "trans-enc"
+      "trans-dec"
       "vigenere";
     gap:1.75rem;
     margin-top:1.75rem;
@@ -164,9 +166,11 @@
       grid-template-areas:
         "wheel wheel"
         "sub freq"
-        "trans trans"
-        "railfence railfence"
         "atbash atbash"
+        "rail-enc rail-enc"
+        "rail-dec rail-dec"
+        "trans-enc trans-enc"
+        "trans-dec trans-dec"
         "vigenere vigenere";
     }
   }
@@ -174,9 +178,11 @@
   .area-wheel{ grid-area:wheel; }
   .area-sub{ grid-area:sub; }
   .area-freq{ grid-area:freq; }
-  .area-trans{ grid-area:trans; }
-  .area-railfence{ grid-area:railfence; }
   .area-atbash{ grid-area:atbash; }
+  .area-rail-enc{ grid-area:rail-enc; }
+  .area-rail-dec{ grid-area:rail-dec; }
+  .area-trans-enc{ grid-area:trans-enc; }
+  .area-trans-dec{ grid-area:trans-dec; }
   .area-vigenere{ grid-area:vigenere; }
 
   h1{
@@ -565,10 +571,11 @@
     overflow-x:auto;
   }
 
-  #railGrid{
+  #railEncGrid, #railDecGrid{
     display:grid;
     gap:3px;
     margin-top:0.7rem;
+    width:fit-content;
   }
 
   .rail-cell{

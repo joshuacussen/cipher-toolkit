@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cipher Toolkit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&family=Source+Code+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+<script>
+  (function(){
+    var saved = localStorage.getItem("cipherToolkitTheme");
+    if(saved === "amber"){
+      document.documentElement.setAttribute("data-theme", "amber");
+    }
+  })();
+</script>
+<link rel="stylesheet" href="cipher_toolkit.css">
+</head>
+<body>
+<main>
+
+  <div class="page-header">
+    <div class="intro">
+      <h1>Cipher Toolkit</h1>
+      <p class="lede">Six tools for exploring classic ciphers: Caesar, substitution, transposition, rail fence, Atbash, and Vigen&egrave;re.</p>
+    </div>
+    <div class="paper-callout">
+      <p class="callout-label">Prefer paper?</p>
+      <p><a href="./Cipher_Toolkit_Printable.pdf">Download the printable toolkit (PDF)</a>.</p>
+    </div>
+    <button type="button" id="themeSwitch" class="theme-switch" aria-pressed="false" aria-label="Switch between green and amber dark themes">
+      <span class="theme-switch-track">
+        <span class="theme-switch-knob">
+          <svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true">
+            <path d="M14 9.5A6 6 0 1 1 6.5 2 4.8 4.8 0 0 0 14 9.5z" fill="var(--on-accent)"/>
+          </svg>
+        </span>
+      </span>
+    </button>
+  </div>
+
+  <div class="toolkit-grid">
+
+    <!-- ===================== CAESAR WHEEL ===================== -->
+    <section class="card area-wheel">
+      <span class="tag">Caesar cipher</span>
+      <h2>Caesar wheel</h2>
+      <p class="help">Every letter shifts forward through the alphabet by the same fixed amount. Turn the wheel to try a shift, then check the mapping below.</p>
+
+      <div class="wheel-wrap">
+        <svg id="wheelSvg" viewBox="0 0 300 300">
+          <circle cx="150" cy="150" r="138" fill="none" class="wheel-hairline" stroke-width="1"/>
+          <circle cx="150" cy="150" r="95" class="wheel-disc" />
+          <g id="outerRingGroup"></g>
+          <g id="innerRingGroup"></g>
+          <polygon points="150,5 142,20 158,20" class="wheel-pointer" />
+        </svg>
+
+        <div class="wheel-controls">
+          <button id="shiftDown" aria-label="Decrease shift">&minus;</button>
+          <input type="range" id="shiftSlider" min="-25" max="25" value="3" step="1" aria-label="Caesar shift amount">
+          <button id="shiftUp" aria-label="Increase shift">+</button>
+        </div>
+
+        <div class="shift-readout">
+          <div id="shiftLabel">Shift: +3</div>
+          <div class="equiv" id="shiftEquiv"></div>
+        </div>
+
+        <div class="mapping-row">
+          <table class="alpha-map" id="mapTable"></table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== SUBSTITUTION MAPPER ===================== -->
+    <section class="card area-sub">
+      <span class="tag">Substitution cipher</span>
+      <h2>Substitution mapper</h2>
+      <p class="help">Each letter has been swapped for a different letter&mdash;not necessarily a fixed shift. Guess a mapping below for any letters you've worked out; the preview updates as you go. No two ciphertext letters can map to the same guess.</p>
+
+      <div class="sub-grid" id="subGrid"></div>
+
+      <label class="field-label" for="subCipherInput">Paste the ciphertext here</label>
+      <textarea id="subCipherInput" rows="2" placeholder="Paste a message to test your guesses against it"></textarea>
+
+      <div class="preview-box" id="subPreview">Your working decode will appear here.</div>
+      <div class="collision-note" id="subCollisionNote"></div>
+    </section>
+
+    <!-- ===================== LETTER FREQUENCY ===================== -->
+    <section class="card area-freq">
+      <span class="tag">Substitution cipher</span>
+      <h2>Letter frequency</h2>
+      <p class="help">How often each letter turns up in ordinary English. Compare this with your ciphertext to make your first guesses.</p>
+      <div id="freqChart"></div>
+    </section>
+
+    <!-- ===================== ATBASH ===================== -->
+    <section class="card area-atbash">
+      <span class="tag">Atbash cipher</span>
+      <h2>Mirror alphabet</h2>
+      <p class="help">Every letter swaps with its mirror image in the alphabet. No key needed&mdash;just read straight off this strip.</p>
+      <table class="atbash-table" id="atbashTable"></table>
+    </section>
+
+    <!-- ===================== RAIL FENCE ENCRYPT ===================== -->
+    <section class="card area-rail-enc">
+      <span class="tag">Rail fence cipher</span>
+      <h2>Rail fence &mdash; encrypt</h2>
+      <p class="help">Letters are written in a zigzag across a number of rails, then read off rail by rail. Type a plaintext to see how it gets scrambled&mdash;the default example shows the pattern with 3 rails.</p>
+
+      <div class="trans-controls">
+        <div>
+          <label class="field-label" for="railEncInput">Plaintext (spaces ignored)</label>
+          <input type="text" id="railEncInput" placeholder="Type a plaintext&hellip;">
+        </div>
+        <div>
+          <label class="field-label">Rails</label>
+          <div class="rows-stepper">
+            <button id="railEncDown" aria-label="Fewer rails">&minus;</button>
+            <span id="railEncValue">3</span>
+            <button id="railEncUp" aria-label="More rails">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="rail-demo-scroll">
+        <div id="railEncGrid"></div>
+      </div>
+      <div class="rail-readout">
+        Encrypted: <strong id="railEncReadout">&mdash;</strong>
+      </div>
+    </section>
+
+    <!-- ===================== RAIL FENCE DECRYPT ===================== -->
+    <section class="card area-rail-dec">
+      <span class="tag">Rail fence cipher</span>
+      <h2>Rail fence &mdash; decrypt</h2>
+      <p class="help">Paste the ciphertext and try different rail counts. Only the correct number of rails will produce readable plaintext.</p>
+
+      <div class="trans-controls">
+        <div>
+          <label class="field-label" for="railDecInput">Ciphertext (spaces ignored)</label>
+          <input type="text" id="railDecInput" placeholder="Paste the ciphertext&hellip;">
+        </div>
+        <div>
+          <label class="field-label">Rails</label>
+          <div class="rows-stepper">
+            <button id="railDecDown" aria-label="Fewer rails">&minus;</button>
+            <span id="railDecValue">3</span>
+            <button id="railDecUp" aria-label="More rails">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="rail-demo-scroll">
+        <div id="railDecGrid"></div>
+      </div>
+
+      <div class="rail-readout">
+        Decrypted: <strong id="railDecReadout">&mdash;</strong>
+      </div>
+    </section>
+
+    <!-- ===================== TRANSPOSITION ENCRYPT ===================== -->
+    <section class="card area-trans-enc">
+      <span class="tag">Transposition cipher</span>
+      <h2>Transposition &mdash; encrypt</h2>
+      <p class="help">Type a plaintext phrase and adjust the number of columns to see how the letters get rearranged. Letters are written in row by row and read out column by column.</p>
+
+      <div class="trans-controls">
+        <div>
+          <label class="field-label" for="transEncInput">Plaintext (spaces ignored)</label>
+          <input type="text" id="transEncInput" placeholder="Type a candidate plaintext&hellip;">
+        </div>
+        <div>
+          <label class="field-label">Columns</label>
+          <div class="rows-stepper">
+            <button id="transEncColsDown" aria-label="Fewer columns">&minus;</button>
+            <span id="transEncColsValue">3</span>
+            <button id="transEncColsUp" aria-label="More columns">+</button>
+          </div>
+        </div>
+      </div>
+      <div id="transEncGrid"></div>
+      <div class="rail-readout" id="transEncReadout" style="margin-top:0.8rem;"></div>
+    </section>
+
+    <!-- ===================== TRANSPOSITION DECRYPT ===================== -->
+    <section class="card area-trans-dec">
+      <span class="tag">Transposition cipher</span>
+      <h2>Transposition &mdash; decrypt</h2>
+      <p class="help">Paste the ciphertext and adjust the number of columns. When you hit the right column count, reading down each column should reveal the plaintext.</p>
+
+      <div class="trans-controls">
+        <div>
+          <label class="field-label" for="transDecInput">Ciphertext (spaces ignored)</label>
+          <input type="text" id="transDecInput" placeholder="Paste the ciphertext&hellip;">
+        </div>
+        <div>
+          <label class="field-label">Columns</label>
+          <div class="rows-stepper">
+            <button id="transDecColsDown" aria-label="Fewer columns">&minus;</button>
+            <span id="transDecColsValue">3</span>
+            <button id="transDecColsUp" aria-label="More columns">+</button>
+          </div>
+        </div>
+      </div>
+      <div id="transDecGrid"></div>
+    </section>
+
+    <!-- ===================== VIGENÈRE ===================== -->
+    <section class="card area-vigenere">
+      <span class="tag">Vigen&egrave;re cipher</span>
+      <h2>Tabula recta</h2>
+      <p class="help">Used when you're given a keyword instead of a fixed shift&mdash;line the keyword up underneath the message, repeating it for the full length. For each letter: find the row labelled with that letter's keyword letter, then look along it to the column labelled with the plaintext letter&mdash;the cell where they meet is the ciphertext letter. (Decrypting works the same way in reverse: find the ciphertext letter in that row, then read off its column heading.)</p>
+      <div class="vigenere-scroll">
+        <table class="vigenere-table" id="vigenereTable"></table>
+      </div>
+    </section>
+
+  </div>
+
+</main>
+
+<script src="cipher_toolkit.js"></script>
+</body>
+</html>
