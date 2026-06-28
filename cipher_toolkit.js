@@ -52,8 +52,8 @@
   // (we move each letter's x/y instead of rotating the whole group,
   // which is what stops the letters tilting as the wheel turns).
 
-  const cx = 150, cy = 150; // centre of the SVG viewBox
-  const outerR = 118, innerR = 68; // ring radii, in SVG user units
+  const cx = 150, cy = 150;
+  const outerR = 125, innerR = 78;
 
   // Returns the {x, y} position of the point at the given fractional
   // position (index / total) around a circle of the given radius,
@@ -108,43 +108,15 @@
     });
   }
 
-  const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  let displayShift = 3; // the shift value currently shown on the wheel (can be mid-animation, hence a float)
-  let animFrame = null; // handle for the in-progress requestAnimationFrame loop, if any
+  // Add shift label to centre of SVG
+  const shiftCentreEl = document.createElementNS("http://www.w3.org/2000/svg","text");
+  shiftCentreEl.setAttribute("x", "150");
+  shiftCentreEl.setAttribute("y", "155");
+  shiftCentreEl.setAttribute("text-anchor", "middle");
+  shiftCentreEl.setAttribute("dominant-baseline", "middle");
+  shiftCentreEl.setAttribute("class", "wheel-centre-label");
+  document.getElementById("wheelSvg").appendChild(shiftCentreEl);
 
-
-  // Smoothly moves the wheel from its current displayed shift to
-  // `targetShift` over 400ms, easing out towards the end. If the
-  // person prefers reduced motion, we skip the animation and jump
-  // straight there instead.
-  function animateWheelTo(targetShift){
-    if(prefersReducedMotion){
-      displayShift = targetShift;
-      repositionInnerRing(displayShift);
-      return;
-    }
-    if(animFrame) cancelAnimationFrame(animFrame);
-    const startVal = displayShift;
-    const startTime = performance.now();
-    const duration = 400;
-    function step(now){
-      const t = Math.min(1, (now - startTime) / duration);
-      const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
-      displayShift = startVal + (targetShift - startVal) * eased;
-      repositionInnerRing(displayShift);
-      if(t < 1){
-        animFrame = requestAnimationFrame(step);
-      } else {
-        displayShift = targetShift; // snap exactly to the target, avoiding any float drift
-        animFrame = null;
-      }
-    }
-    animFrame = requestAnimationFrame(step);
-  }
-
-  // Rebuilds the two-row "plaintext above / ciphertext below" table
-  // that sits underneath the wheel - this is the authoritative,
-  // always-exact readout; the wheel itself is just the illustration.
   function renderMapping(shift){
     const s = mod26(shift);
     const table = document.getElementById("mapTable");
@@ -155,7 +127,6 @@
       const topCell = document.createElement("td");
       topCell.textContent = A[i];
       topRow.appendChild(topCell);
-
       const bottomCell = document.createElement("td");
       bottomCell.textContent = A[(i + s) % 26];
       bottomRow.appendChild(bottomCell);
@@ -164,35 +135,97 @@
     table.appendChild(bottomRow);
   }
 
-  // Called whenever the shift changes (slider drag, +/- buttons, or
-  // keyboard). Updates the text readouts immediately, then kicks off
-  // the wheel animation and mapping table refresh.
-  function updateWheel(shift){
-    shift = Math.max(-25, Math.min(25, shift));
-    document.getElementById("shiftSlider").value = shift;
-    document.getElementById("shiftLabel").textContent =
-      "Shift: " + (shift >= 0 ? "+" : "") + shift;
+  let currentShift = 3; // logical shift, always 0-25
+  let displayShift = 3; // visual shift, unbounded during drag
 
-    // Shifts outside -25..25 aren't offered by the slider, but a shift
-    // can still be a non-reduced value like -5 (vs. its equivalent,
-    // +21) - showing that equivalence is a small nod to the modular
-    // arithmetic used in the Python task this toolkit supports.
-    const normalized = mod26(shift);
-    if(normalized !== shift && normalized !== 0){
-      document.getElementById("shiftEquiv").textContent =
-        "(same as a shift of +" + normalized + ")";
-    } else {
-      document.getElementById("shiftEquiv").textContent = "";
+  let animFrame = null;
+
+  function animateToShift(targetShift){
+    if(animFrame) cancelAnimationFrame(animFrame);
+    const startVal = displayShift;
+    const startTime = performance.now();
+    const duration = 150;
+    function step(now){
+      const t = Math.min(1, (now - startTime) / duration);
+      const eased = 1 - Math.pow(1 - t, 2); // ease-out quad
+      displayShift = startVal + (targetShift - startVal) * eased;
+      repositionInnerRing(displayShift);
+      if(t < 1){
+        animFrame = requestAnimationFrame(step);
+      } else {
+        displayShift = targetShift;
+        animFrame = null;
+      }
     }
-
-    animateWheelTo(shift);
-    renderMapping(shift);
+    animFrame = requestAnimationFrame(step);
   }
 
-  const slider = document.getElementById("shiftSlider");
-  slider.addEventListener("input", () => updateWheel(parseInt(slider.value, 10)));
-  document.getElementById("shiftUp").addEventListener("click", () => updateWheel(parseInt(slider.value, 10) + 1));
-  document.getElementById("shiftDown").addEventListener("click", () => updateWheel(parseInt(slider.value, 10) - 1));
+  function updateWheel(shift){
+    currentShift = mod26(shift);
+    // Animate from current displayShift to the nearest equivalent target,
+    // taking the short way round (at most half a rotation).
+    let target = displayShift + mod26(currentShift - mod26(displayShift) + 13) - 13;
+    shiftCentreEl.textContent = "+" + currentShift;
+    animateToShift(target);
+    renderMapping(currentShift);
+  }
+
+  // ---- Drag-to-spin ----
+  // dragVisualShift tracks the unbounded visual position during a drag,
+  // independently of currentShift, so the animation never resets.
+  const wheelSvg = document.getElementById("wheelSvg");
+  let dragStartAngle = null;
+  let dragVisualBase = null; // displayShift value at drag start
+
+  function svgAngle(e){
+    const rect = wheelSvg.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const x = clientX - rect.left - rect.width / 2;
+    const y = clientY - rect.top - rect.height / 2;
+    return Math.atan2(x, -y) * 180 / Math.PI;
+  }
+
+  function onDragStart(e){
+    e.preventDefault();
+    if(animFrame){ cancelAnimationFrame(animFrame); animFrame = null; }
+    dragStartAngle = svgAngle(e);
+    dragVisualBase = displayShift;
+    wheelSvg.classList.add("dragging");
+  }
+
+  function onDragMove(e){
+    if(dragStartAngle === null) return;
+    e.preventDefault();
+    const delta = svgAngle(e) - dragStartAngle;
+    const steps = delta / (360 / 26);
+    const raw = dragVisualBase + steps;
+    // Move ring directly — no animation during drag
+    displayShift = raw;
+    repositionInnerRing(displayShift);
+    currentShift = mod26(Math.round(raw));
+    shiftCentreEl.textContent = "+" + currentShift;
+    renderMapping(currentShift);
+  }
+
+  function onDragEnd(){
+    dragStartAngle = null;
+    dragVisualBase = null;
+    displayShift = currentShift;
+    repositionInnerRing(displayShift);
+    wheelSvg.classList.remove("dragging");
+  }
+
+  wheelSvg.addEventListener("mousedown", onDragStart);
+  window.addEventListener("mousemove", onDragMove);
+  window.addEventListener("mouseup", onDragEnd);
+  wheelSvg.addEventListener("touchstart", onDragStart, { passive: false });
+  window.addEventListener("touchmove", onDragMove, { passive: false });
+  window.addEventListener("touchend", onDragEnd);
+
+  // +/- buttons normalise immediately since they're not mid-drag
+  document.getElementById("shiftUp").addEventListener("click", () => updateWheel(mod26(currentShift + 1)));
+  document.getElementById("shiftDown").addEventListener("click", () => updateWheel(mod26(currentShift - 1)));
 
   updateWheel(3);
 
@@ -662,3 +695,4 @@
   });
 
 })();
+

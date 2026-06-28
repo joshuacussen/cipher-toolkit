@@ -69,23 +69,41 @@
 
   .page-header{
     display:flex;
-    flex-wrap:wrap;
-    gap:1.5rem;
-    align-items:flex-start;
-    justify-content:space-between;
+    flex-direction:column;
+    gap:0.75rem;
+    margin-bottom:0.25rem;
   }
 
-  .page-header .intro{
-    flex:2 1 380px;
+  .title-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:1rem;
+  }
+
+  .title-row h1{
+    margin:0;
+  }
+
+  .header-bottom{
+    display:flex;
+    flex-wrap:wrap;
+    gap:1rem;
+    align-items:flex-start;
+  }
+
+  .header-bottom .lede{
+    flex:2 1 280px;
+    margin:0;
   }
 
   .page-header .paper-callout{
-    flex:1 1 260px;
+    flex:1 1 220px;
     max-width:320px;
     background:var(--paper-raised);
     border:1px solid var(--rule);
     border-radius:var(--radius);
-    padding:1rem 1.25rem;
+    padding:0.75rem 1rem;
     font-size:0.92rem;
     color:var(--ink-soft);
   }
@@ -250,9 +268,14 @@
   }
 
   #wheelSvg{
-    width:min(320px, 85vw);
-    height:min(320px, 85vw);
+    width:min(380px, 90vw);
+    height:min(380px, 90vw);
+    cursor:grab;
+    touch-action:none;
+    user-select:none;
   }
+
+  #wheelSvg.dragging{ cursor:grabbing; }
 
   .wheel-hairline{ stroke:var(--rule); }
   .wheel-disc{ fill:var(--brass); }
@@ -260,51 +283,46 @@
 
   .ring-letter{
     font-family:"Source Code Pro",monospace;
-    font-size:15px;
+    font-size:13px;
     fill:var(--ink);
     text-anchor:middle;
     dominant-baseline:middle;
+    pointer-events:none;
   }
 
   .ring-letter.inner{ fill:#fff; }
 
+  .wheel-centre-label{
+    font-family:"Source Code Pro",monospace;
+    font-size:26px;
+    font-weight:700;
+    fill:var(--ink);
+    text-anchor:middle;
+    dominant-baseline:middle;
+    pointer-events:none;
+  }
+
   .wheel-controls{
     display:flex;
     align-items:center;
-    gap:0.75rem;
-    width:100%;
-    max-width:360px;
+    justify-content:center;
+    gap:1.5rem;
   }
 
   .wheel-controls button{
     font-family:"Source Code Pro",monospace;
-    font-size:1rem;
-    width:2.2rem;
-    height:2.2rem;
+    font-size:1.1rem;
+    width:2.8rem;
+    height:2.8rem;
     border-radius:50%;
     border:1px solid var(--brass);
     background:var(--paper);
     color:var(--ink);
     cursor:pointer;
+    touch-action:manipulation;
   }
 
   .wheel-controls button:hover{ background:var(--ink); color:var(--on-accent); }
-
-  .wheel-controls input[type="range"]{
-    flex:1;
-  }
-
-  .shift-readout{
-    font-family:"Source Code Pro",monospace;
-    font-size:1.05rem;
-    text-align:center;
-  }
-
-  .shift-readout .equiv{
-    color:var(--ink-soft);
-    font-size:0.85rem;
-    min-height:1.3rem;
-  }
 
   .mapping-row{
     overflow-x:auto;
@@ -624,3 +642,83 @@
     outline:2px solid var(--ink);
     outline-offset:2px;
   }
+
+  /* ===========================================================
+     Mobile fixes
+     =========================================================== */
+  @media (max-width:600px){
+
+    html{ font-size:105%; }
+
+    main{ padding:1.25rem 1rem 3rem; }
+
+    /* Caesar wheel: hide buttons and mapping table on mobile */
+    .mapping-row{ display:none; }
+
+    /* Single column on mobile regardless of card type */
+    .toolkit-grid{
+      grid-template-columns:1fr !important;
+      grid-template-areas:
+        "wheel"
+        "sub"
+        "freq"
+        "atbash"
+        "rail-enc"
+        "rail-dec"
+        "trans-enc"
+        "trans-dec"
+        "vigenere" !important;
+      gap:1.25rem;
+    }
+
+    /* Substitution mapper: fewer columns so cells don't shrink to nothing */
+    .sub-grid{
+      grid-template-columns:repeat(9, 1fr);
+    }
+
+    /* Stepper buttons: larger touch targets */
+    .rows-stepper button{
+      width:2.6rem;
+      height:2.6rem;
+      font-size:1.1rem;
+    }
+
+    /* Trans controls stack vertically */
+    .trans-controls{
+      flex-direction:column;
+    }
+
+    .trans-controls > div{
+      min-width:0;
+      width:100%;
+    }
+
+    /* Inputs: prevent iOS zoom on focus (needs font-size >= 16px) */
+    input[type="text"],
+    textarea,
+    .sub-cell input{
+      font-size:1rem;
+    }
+
+    /* Rail fence and transposition grids: scroll horizontally */
+    .rail-demo-scroll,
+    #transEncGrid,
+    #transDecGrid{
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+    }
+
+    /* Vigenère table: always scrolls on mobile */
+    .vigenere-scroll{
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+    }
+
+    /* Alpha mapping table under the wheel: scroll horizontally */
+    .mapping-row{
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+    }
+
+  }
+

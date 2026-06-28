@@ -21,23 +21,25 @@
 <main>
 
   <div class="page-header">
-    <div class="intro">
+    <div class="title-row">
       <h1>Cipher Toolkit</h1>
-      <p class="lede">Six tools for exploring classic ciphers: Caesar, substitution, transposition, rail fence, Atbash, and Vigen&egrave;re.</p>
-    </div>
-    <div class="paper-callout">
-      <p class="callout-label">Prefer paper?</p>
-      <p><a href="./Cipher_Toolkit_Printable.pdf">Download the printable toolkit (PDF)</a>.</p>
-    </div>
-    <button type="button" id="themeSwitch" class="theme-switch" aria-pressed="false" aria-label="Switch between green and amber dark themes">
-      <span class="theme-switch-track">
-        <span class="theme-switch-knob">
-          <svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true">
-            <path d="M14 9.5A6 6 0 1 1 6.5 2 4.8 4.8 0 0 0 14 9.5z" fill="var(--on-accent)"/>
-          </svg>
+      <button type="button" id="themeSwitch" class="theme-switch" aria-pressed="false" aria-label="Switch between green and amber dark themes">
+        <span class="theme-switch-track">
+          <span class="theme-switch-knob">
+            <svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true">
+              <path d="M14 9.5A6 6 0 1 1 6.5 2 4.8 4.8 0 0 0 14 9.5z" fill="var(--on-accent)"/>
+            </svg>
+          </span>
         </span>
-      </span>
-    </button>
+      </button>
+    </div>
+    <div class="header-bottom">
+      <p class="lede">Six tools for exploring classic ciphers: Caesar, substitution, transposition, rail fence, Atbash, and Vigen&egrave;re.</p>
+      <div class="paper-callout">
+        <p class="callout-label">Prefer paper?</p>
+        <p><a href="./Cipher_Toolkit_Printable.pdf">Download the printable toolkit (PDF)</a>.</p>
+      </div>
+    </div>
   </div>
 
   <div class="toolkit-grid">
@@ -46,7 +48,7 @@
     <section class="card area-wheel">
       <span class="tag">Caesar cipher</span>
       <h2>Caesar wheel</h2>
-      <p class="help">Every letter shifts forward through the alphabet by the same fixed amount. Turn the wheel to try a shift, then check the mapping below.</p>
+      <p class="help">Every letter shifts forward through the alphabet by the same fixed amount. Drag the wheel to try a shift&mdash;the current shift is shown in the centre.</p>
 
       <div class="wheel-wrap">
         <svg id="wheelSvg" viewBox="0 0 300 300">
@@ -54,18 +56,12 @@
           <circle cx="150" cy="150" r="95" class="wheel-disc" />
           <g id="outerRingGroup"></g>
           <g id="innerRingGroup"></g>
-          <polygon points="150,5 142,20 158,20" class="wheel-pointer" />
+          <polygon points="150,2 144,16 156,16" class="wheel-pointer" />
         </svg>
 
         <div class="wheel-controls">
           <button id="shiftDown" aria-label="Decrease shift">&minus;</button>
-          <input type="range" id="shiftSlider" min="-25" max="25" value="3" step="1" aria-label="Caesar shift amount">
           <button id="shiftUp" aria-label="Increase shift">+</button>
-        </div>
-
-        <div class="shift-readout">
-          <div id="shiftLabel">Shift: +3</div>
-          <div class="equiv" id="shiftEquiv"></div>
         </div>
 
         <div class="mapping-row">
