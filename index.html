@@ -4,6 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Cipher Toolkit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&family=Source+Code+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+<script>
+  (function(){
+    var saved = localStorage.getItem("cipherToolkitTheme");
+    if(saved === "amber"){
+      document.documentElement.setAttribute("data-theme", "amber");
+    }
+  })();
+</script>
 <link rel="stylesheet" href="cipher_toolkit.css">
 </head>
 <body>
@@ -18,6 +29,15 @@
       <p class="callout-label">Prefer paper?</p>
       <p>Working on paper instead? <a href="./Cipher_Toolkit_Printable.pdf">Download the printable toolkit (PDF)</a>.</p>
     </div>
+    <button type="button" id="themeSwitch" class="theme-switch" aria-pressed="false" aria-label="Switch between green and amber dark themes">
+      <span class="theme-switch-track">
+        <span class="theme-switch-knob">
+          <svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true">
+            <path d="M14 9.5A6 6 0 1 1 6.5 2 4.8 4.8 0 0 0 14 9.5z" fill="var(--on-accent)"/>
+          </svg>
+        </span>
+      </span>
+    </button>
   </div>
 
   <div class="toolkit-grid">
@@ -30,11 +50,11 @@
 
       <div class="wheel-wrap">
         <svg id="wheelSvg" viewBox="0 0 300 300">
-          <circle cx="150" cy="150" r="138" fill="none" stroke="#DCD3C0" stroke-width="1"/>
-          <circle cx="150" cy="150" r="95" fill="#9C7A3C" />
+          <circle cx="150" cy="150" r="138" fill="none" class="wheel-hairline" stroke-width="1"/>
+          <circle cx="150" cy="150" r="95" class="wheel-disc" />
           <g id="outerRingGroup"></g>
           <g id="innerRingGroup"></g>
-          <polygon points="150,5 142,20 158,20" fill="#C1602E" />
+          <polygon points="150,5 142,20 158,20" class="wheel-pointer" />
         </svg>
 
         <div class="wheel-controls">
@@ -52,14 +72,6 @@
           <table class="alpha-map" id="mapTable"></table>
         </div>
       </div>
-    </section>
-
-    <!-- ===================== ATBASH REFERENCE ===================== -->
-    <section class="card area-atbash">
-      <span class="tag">Atbash cipher</span>
-      <h2>Mirror alphabet</h2>
-      <p class="help">Every letter swaps with its mirror image in the alphabet. No key needed&mdash;just read straight off this strip.</p>
-      <table class="atbash-table" id="atbashTable"></table>
     </section>
 
     <!-- ===================== SUBSTITUTION MAPPER ===================== -->
@@ -89,22 +101,19 @@
     <section class="card area-trans">
       <span class="tag">Transposition cipher</span>
       <h2>Transposition grid</h2>
-      <p class="help">The letters haven't changed&mdash;only their order has. Lay the ciphertext into a grid and see if reading it a different way (down a column, in a zigzag) reveals anything.</p>
+      <p class="help">In a columnar transposition, letters are written into a grid row by row, then read back out column by column (in a key-determined order). The example below shows the idea&mdash;adjust the number of columns to see how different grid widths rearrange the same letters. Your task is to work out which width and column order unscrambles your ciphertext.</p>
 
       <div class="trans-controls">
         <div>
-          <label class="field-label" for="transCipherInput">Paste the ciphertext here (spaces are ignored)</label>
-          <input type="text" id="transCipherInput" placeholder="e.g. THISISJUSTADEMOEXAMPLE" value="THISISJUSTADEMOEXAMPLE">
-        </div>
-        <div>
-          <label class="field-label">Number of rows</label>
+          <label class="field-label">Number of columns</label>
           <div class="rows-stepper">
-            <button id="rowsDown" aria-label="Fewer rows">&minus;</button>
+            <button id="rowsDown" aria-label="Fewer columns">&minus;</button>
             <span id="rowsValue">3</span>
-            <button id="rowsUp" aria-label="More rows">+</button>
+            <button id="rowsUp" aria-label="More columns">+</button>
           </div>
         </div>
       </div>
+      <p class="help" style="margin-bottom:0.3rem;">Example: <strong>HEREISASECRETMESSAGE</strong> laid into the grid row by row.</p>
 
       <div id="transGrid"></div>
     </section>
@@ -113,7 +122,7 @@
     <section class="card area-railfence">
       <span class="tag">Rail fence cipher</span>
       <h2>Rail fence pattern</h2>
-      <p class="help">A message can be reordered by writing it in a zigzag down and up across several rails, then reading each rail off left to right. To reverse it, place the letters back into the same zigzag shape and read them off in zigzag order&mdash;but only the correct number of rails will produce something readable. Try the example below with different rail counts.</p>
+      <p class="help">A message can be reordered by writing it in a zigzag down and up across several rails, then reading each rail off left to right. The example below shows how a plaintext phrase gets scrambled&mdash;try different rail counts to see how the pattern changes. Then try to reverse the process yourself on your ciphertext.</p>
 
       <div class="trans-controls">
         <div>
@@ -126,14 +135,22 @@
         </div>
       </div>
 
-      <p class="help" style="margin-bottom:0.3rem;">Example ciphertext: <strong id="railPhraseLabel"></strong></p>
+      <p class="help" style="margin-bottom:0.3rem;">Example plaintext: <strong id="railPhraseLabel"></strong></p>
       <div class="rail-demo-scroll">
         <div id="railGrid"></div>
       </div>
 
       <div class="rail-readout">
-        Reading the zigzag gives: <strong id="railReadout"></strong>
+        Reading the rails gives: <strong id="railReadout"></strong>
       </div>
+    </section>
+
+    <!-- ===================== ATBASH REFERENCE ===================== -->
+    <section class="card area-atbash">
+      <span class="tag">Atbash cipher</span>
+      <h2>Mirror alphabet</h2>
+      <p class="help">Every letter swaps with its mirror image in the alphabet. No key needed&mdash;just read straight off this strip.</p>
+      <table class="atbash-table" id="atbashTable"></table>
     </section>
 
     <!-- ===================== VIGENÈRE REFERENCE ===================== -->

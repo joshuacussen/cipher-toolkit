@@ -16,6 +16,33 @@
 
   const A = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
+  // ===================== THEME TOGGLE =====================
+  // "Dark mode, or dark mode?" - both options are dark, only the
+  // phosphor colour changes. The actual theme switch is just one
+  // attribute (data-theme on <html>); the head script applies any
+  // saved choice immediately on load, before first paint, so there's
+  // no flash of the wrong theme.
+  const themeSwitch = document.getElementById("themeSwitch");
+
+  function setTheme(theme){
+    if(theme === "amber"){
+      document.documentElement.setAttribute("data-theme", "amber");
+    } else {
+      document.documentElement.removeAttribute("data-theme");
+    }
+    localStorage.setItem("cipherToolkitTheme", theme);
+    themeSwitch.setAttribute("aria-pressed", theme === "amber" ? "true" : "false");
+  }
+
+  themeSwitch.addEventListener("click", () => {
+    const current = document.documentElement.getAttribute("data-theme") === "amber" ? "amber" : "green";
+    setTheme(current === "amber" ? "green" : "amber");
+  });
+
+  // Sync the switch's position with whatever the head script already
+  // applied (or the default, if nothing was saved).
+  setTheme(document.documentElement.getAttribute("data-theme") === "amber" ? "amber" : "green");
+
   // ===================== CAESAR WHEEL =====================
   // Two concentric rings of letters drawn as SVG <text> elements.
   // The outer ring is fixed (always A-Z in order, A at the top) and
@@ -285,46 +312,35 @@
   document.getElementById("subCipherInput").addEventListener("input", renderSubPreview);
 
   // ===================== TRANSPOSITION GRID =====================
-  // A generic "lay this out in a grid" tool: it deliberately does not
-  // pick a reading direction for the person (rows, columns, zigzag).
-  // It just gives a clean grid to look at; spotting the pattern is
-  // still up to whoever's using it.
-  const transInput = document.getElementById("transCipherInput");
+  // A fixed teaching example showing how columnar transposition works:
+  // letters are written into a grid row by row, then read out column
+  // by column. The person adjusts the number of columns to see how the
+  // grid changes - the actual solving of their ciphertext is left to them.
+  const TRANS_EXAMPLE = "HEREISASECRETMESSAGE";
   const rowsValueEl = document.getElementById("rowsValue");
   let rows = 3;
 
   function renderTransGrid(){
-    const text = transInput.value.replace(/\s+/g, ""); // ignore spaces - they're just block-grouping, not part of the message
+    const text = TRANS_EXAMPLE;
     const grid = document.getElementById("transGrid");
     grid.innerHTML = "";
 
-    if(!text){
-      grid.style.gridTemplateColumns = "";
-      return;
-    }
-
-    // Fill left-to-right, top-to-bottom, wrapping to a new row once
-    // `rows` is reached - i.e. a plain rectangular fill, not a zigzag.
-    // Fixed-size columns (not 1fr) so cells stay the same size
-    // regardless of how many columns there are - otherwise fewer
-    // columns (more rows) would stretch to fill the same container
-    // width, making the cells visibly grow.
-    const cols = Math.ceil(text.length / rows);
+    // `rows` here controls number of columns (we renamed the label in the
+    // HTML to "columns" but kept the variable name for minimal diff).
+    const cols = rows;
+    const numRows = Math.ceil(text.length / cols);
     grid.style.gridTemplateColumns = "repeat(" + cols + ", 1.6rem)";
 
-    for(let r = 0; r < rows; r++){
+    for(let r = 0; r < numRows; r++){
       for(let c = 0; c < cols; c++){
         const idx = r * cols + c;
         const cell = document.createElement("div");
         cell.className = "trans-cell";
-        cell.textContent = idx < text.length ? text[idx] : ""; // blank cell if we've run out of letters
+        cell.textContent = idx < text.length ? text[idx] : "";
         grid.appendChild(cell);
       }
     }
   }
-
-  transInput.addEventListener("input", renderTransGrid);
-  renderTransGrid(); // draw the pre-filled example immediately, rather than waiting for the first keystroke
 
   document.getElementById("rowsUp").addEventListener("click", () => {
     rows = Math.min(8, rows + 1);
@@ -336,6 +352,8 @@
     rowsValueEl.textContent = rows;
     renderTransGrid();
   });
+
+  renderTransGrid();
 
   // ===================== FREQUENCY CHART =====================
   // Static reference data: standard letter frequencies in English
@@ -457,18 +475,14 @@
   });
 
   // ===================== RAIL FENCE DEMO =====================
-  // This demo works in the decrypt direction: we start from a fixed
-  // ciphertext (computed ahead of time by rail-fencing a known message
-  // at 3 rails) and let the person try different rail counts against it.
-  // Only the correct rail count will turn it back into readable text;
-  // every other value produces a different, equally "valid-looking"
-  // scramble. That mirrors how you'd actually attack a rail fence
-  // cipher in practice: you don't know the rail count, so you try them
-  // one at a time until something readable falls out.
-  const RAIL_CIPHERTEXT = "MMMIETETINGTEADH"; // = "MEETMEATMIDNIGHT" rail-fenced at 3 rails
+  // This demo works in the encrypt direction: the person types a
+  // plaintext phrase and picks a rail count, and the zigzag diagram
+  // shows how the letters get rearranged. Understanding the encrypt
+  // direction is what gives you the insight to reverse it yourself.
+  const RAIL_DEFAULT = "MEETMEATMIDNIGHT";
   let railCount = 3;
   const railsValueEl = document.getElementById("railsValue");
-  document.getElementById("railPhraseLabel").textContent = RAIL_CIPHERTEXT;
+  document.getElementById("railPhraseLabel").textContent = RAIL_DEFAULT;
 
   /**
    * Returns, for each character position in a message of the given
@@ -495,44 +509,30 @@
   }
 
   /**
-   * Decodes a rail-fenced ciphertext for a given rail count.
-   *
-   * A rail fence cipher is produced by reading the rails out in order
-   * (all of rail 0 left-to-right, then all of rail 1, and so on). To
-   * reverse it, we place the ciphertext letters back into their rails
-   * in that same order, which reconstructs the original zigzag - then
-   * reading the zigzag column-by-column gives back the plaintext.
-   *
-   * If `rails` doesn't match the rail count actually used to encrypt
-   * the message, this still runs without error, but produces nonsense,
-   * since the letters get placed into the wrong zigzag shape.
+   * Encodes a plaintext using the rail fence cipher at the given rail count.
+   * Shows the zigzag layout and the resulting ciphertext, so the person can
+   * see how the scrambling works — they then reverse this process themselves.
    */
-  function decodeRailFence(ciphertext, rails){
-    const railOf = railIndexPattern(ciphertext.length, rails);
-
-    // Drop each ciphertext letter into its column, processing one rail
-    // at a time (this is the inverse of how the ciphertext was read out).
-    const grid = new Array(ciphertext.length).fill(null);
-    let nextChar = 0;
+  function encodeRailFence(plaintext, rails){
+    const railOf = railIndexPattern(plaintext.length, rails);
+    // Read off rails in order to produce the ciphertext.
+    let ciphertext = "";
     for(let r = 0; r < rails; r++){
-      for(let c = 0; c < ciphertext.length; c++){
-        if(railOf[c] === r){
-          grid[c] = ciphertext[nextChar];
-          nextChar++;
-        }
+      for(let c = 0; c < plaintext.length; c++){
+        if(railOf[c] === r) ciphertext += plaintext[c];
       }
     }
-
-    return { railOf, grid, plaintext: grid.join("") };
+    return { railOf, ciphertext };
   }
 
   /**
    * Renders the zigzag diagram for the current rail count and updates
-   * the "reading the zigzag gives" readout.
+   * the "reading the rails gives" readout with the resulting ciphertext.
    */
   function renderRailFence(){
-    const { railOf, grid, plaintext } = decodeRailFence(RAIL_CIPHERTEXT, railCount);
-    const length = RAIL_CIPHERTEXT.length;
+    const plaintext = RAIL_DEFAULT;
+    const { railOf, ciphertext } = encodeRailFence(plaintext, railCount);
+    const length = plaintext.length;
 
     const gridEl = document.getElementById("railGrid");
     gridEl.innerHTML = "";
@@ -547,7 +547,7 @@
         const cell = document.createElement("div");
         if(railOf[c] === r){
           cell.className = "rail-cell filled";
-          cell.textContent = grid[c];
+          cell.textContent = plaintext[c];
         } else {
           cell.className = "rail-cell empty";
           cell.textContent = "\u00B7"; // middle dot, just a visual placeholder
@@ -556,7 +556,7 @@
       }
     }
 
-    document.getElementById("railReadout").textContent = plaintext;
+    document.getElementById("railReadout").textContent = ciphertext;
   }
 
   document.getElementById("railsUp").addEventListener("click", () => {

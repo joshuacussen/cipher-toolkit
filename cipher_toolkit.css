@@ -7,30 +7,56 @@
      cards (wheel, transposition, rail fence, atbash, vigenere) span
      full width while substitution and frequency sit side by side.
 
-     Colour palette: warm paper background, terracotta accent for
-     interactive/highlighted elements, brass for secondary accents
-     (the wheel's disc, frequency bars, table headers).
+     Colour palette: two terminal/phosphor themes (green and amber),
+     switched via [data-theme] on <html>. Both share the same near-
+     black background; only the accent hue differs, like a real
+     monochrome CRT. Contrast ratios were checked against WCAG, not
+     just eyeballed - see the comments below each theme block.
+
+     --paper / --paper-raised : page / card background (shared, both themes)
+     --ink                    : bright accent - headings, active states, filled cells
+     --ink-soft               : muted body text
+     --brass / --rule         : dim border/divider tone
+     --warn                   : error/collision state - fixed red in both themes,
+                                 since error states benefit from a consistent,
+                                 instantly-recognisable colour rather than
+                                 matching the current theme
+     --on-accent              : text colour for sitting on a bright accent fill
+     --mid                    : a middle brightness, between --rule (dim) and
+                                 --ink (bright) - used where two different
+                                 intensities need to be told apart against the
+                                 same background (e.g. the frequency bars)
      =========================================================== */
   :root{
-    --paper:#FAF6EC;
-    --paper-raised:#F3EDDF;
-    --ink:#211D17;
-    --ink-soft:#5B5448;
-    --terracotta:#C1602E;
-    --brass:#9C7A3C;
-    --brass-light:#C7A968;
-    --rule:#DCD3C0;
-    --warn:#B23B2E;
-    --radius:10px;
+    --paper:#0A0F0C;
+    --paper-raised:#10140D;
+    --ink:#39FF88;          /* ~10.6:1 against --paper */
+    --ink-soft:#7FA68C;     /* ~7.1:1 against --paper */
+    --brass:#2F6B45;        /* ~3.1:1 against --paper - meets the UI-boundary minimum */
+    --rule:#2F6B45;
+    --mid:#4FAD6E;          /* ~5.7:1 against --paper - sits between --rule and --ink */
+    --warn:#FF5C5C;         /* ~6.4:1 against --paper */
+    --on-accent:#000;
+    --radius:6px;
   }
+
+  [data-theme="amber"]{
+    --ink:#FFB000;          /* ~10.6:1 against --paper */
+    --ink-soft:#C9A06B;     /* ~8:1 against --paper */
+    --brass:#7A5C2E;        /* ~3.1:1 against --paper */
+    --rule:#7A5C2E;
+    --mid:#C8902F;          /* ~5.8:1 against --paper */
+  }
+
+  html{ font-size:116%; }
 
   *{ box-sizing:border-box; }
 
   body{
     margin:0;
     background:var(--paper);
-    color:var(--ink);
-    font-family:"Source Sans 3","Helvetica Neue",Arial,sans-serif;
+    color:var(--ink-soft);
+    font-family:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif;
     line-height:1.5;
     -webkit-font-smoothing:antialiased;
   }
@@ -51,7 +77,6 @@
 
   .page-header .intro{
     flex:2 1 380px;
-    max-width:46ch;
   }
 
   .page-header .paper-callout{
@@ -70,11 +95,52 @@
     font-size:0.75rem;
     letter-spacing:0.1em;
     text-transform:uppercase;
-    color:var(--brass);
+    color:var(--ink-soft);
     margin:0 0 0.5rem;
   }
 
   .page-header .paper-callout p{ margin:0; }
+
+  .theme-switch{
+    background:none;
+    border:none;
+    padding:0;
+    cursor:pointer;
+    flex:0 0 auto;
+    align-self:center;
+  }
+
+  .theme-switch-track{
+    width:3rem;
+    height:1.6rem;
+    border-radius:999px;
+    background:var(--paper-raised);
+    border:1px solid var(--rule);
+    display:flex;
+    align-items:center;
+    padding:2px;
+  }
+
+  .theme-switch-knob{
+    width:1.25rem;
+    height:1.25rem;
+    border-radius:50%;
+    background:var(--ink);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:0.75rem;
+    transition:transform 200ms ease;
+    transform:translateX(0);
+  }
+
+  .theme-switch[aria-pressed="true"] .theme-switch-knob{
+    transform:translateX(1.4rem);
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .theme-switch-knob{ transition:none; }
+  }
 
   .toolkit-grid{
     display:grid;
@@ -118,15 +184,19 @@
     font-weight:700;
     margin:0 0 0.4rem;
     letter-spacing:-0.01em;
+    font-family:"Source Code Pro",monospace;
+    color:var(--ink);
+    text-shadow:0 0 8px color-mix(in srgb, var(--ink) 55%, transparent);
   }
+
+  h1::before{ content:"> "; opacity:0.7; }
 
   .lede{
     color:var(--ink-soft);
     margin:0 0 0.25rem;
-    max-width:42ch;
   }
 
-  .lede a{ color:var(--terracotta); }
+  .lede a{ color:var(--ink); }
 
   section.card{
     background:var(--paper-raised);
@@ -139,7 +209,12 @@
     font-size:1.05rem;
     margin:0 0 0.15rem;
     letter-spacing:0.01em;
+    font-family:"Source Code Pro",monospace;
+    color:var(--ink);
+    text-shadow:0 0 6px color-mix(in srgb, var(--ink) 45%, transparent);
   }
+
+  section.card h2::before{ content:"> "; opacity:0.6; }
 
   .tag{
     display:inline-block;
@@ -147,10 +222,10 @@
     font-size:0.7rem;
     letter-spacing:0.1em;
     text-transform:uppercase;
-    color:#fff;
-    background:var(--terracotta);
+    color:var(--on-accent);
+    background:var(--ink);
     padding:0.18rem 0.5rem;
-    border-radius:999px;
+    border-radius:3px;
     margin-bottom:0.6rem;
   }
 
@@ -169,13 +244,17 @@
   }
 
   #wheelSvg{
-    width:min(280px, 80vw);
-    height:min(280px, 80vw);
+    width:min(320px, 85vw);
+    height:min(320px, 85vw);
   }
+
+  .wheel-hairline{ stroke:var(--rule); }
+  .wheel-disc{ fill:var(--brass); }
+  .wheel-pointer{ fill:var(--ink); }
 
   .ring-letter{
     font-family:"Source Code Pro",monospace;
-    font-size:13px;
+    font-size:15px;
     fill:var(--ink);
     text-anchor:middle;
     dominant-baseline:middle;
@@ -203,7 +282,7 @@
     cursor:pointer;
   }
 
-  .wheel-controls button:hover{ background:var(--brass-light); }
+  .wheel-controls button:hover{ background:var(--ink); color:var(--on-accent); }
 
   .wheel-controls input[type="range"]{
     flex:1;
@@ -218,6 +297,7 @@
   .shift-readout .equiv{
     color:var(--ink-soft);
     font-size:0.85rem;
+    min-height:1.3rem;
   }
 
   .mapping-row{
@@ -245,7 +325,7 @@
 
   table.alpha-map tr:last-child td{
     font-weight:700;
-    color:var(--terracotta);
+    color:var(--ink);
   }
 
   /* ---------- Substitution mapper ---------- */
@@ -286,7 +366,7 @@
 
   .sub-cell input.collision{
     border-color:var(--warn);
-    background:#FBEAE6;
+    background:#2A1212;
   }
 
   textarea, input[type="text"]{
@@ -357,6 +437,7 @@
     border-radius:6px;
     border:1px solid var(--brass);
     background:var(--paper);
+    color:var(--ink);
     cursor:pointer;
   }
 
@@ -408,12 +489,12 @@
 
   .freq-bar-fill{
     height:100%;
-    background:var(--brass);
+    background:var(--mid);
     border-radius:3px;
   }
 
   .freq-row:nth-child(-n+3) .freq-bar-fill{
-    background:var(--terracotta);
+    background:var(--ink);
   }
 
   .atbash-table{
@@ -454,25 +535,30 @@
   table.vigenere-table td.col-head,
   table.vigenere-table td.row-head{
     font-weight:700;
-    color:var(--terracotta);
+    color:var(--ink);
     background:var(--paper-raised);
   }
 
- /* Zebra striping: every other data row gets a faint tint, so it's
-   easier to track a row horizontally across 26 columns. */
- table.vigenere-table tr:nth-child(even) td:not(.row-head):not(.corner){
-   background: var(--rule); 
- }
+  /* Zebra striping: every other data row gets a faint tint, so it's
+     easier to track a row horizontally across 26 columns. */
+  table.vigenere-table tr:nth-child(even) td:not(.row-head):not(.corner){
+    background: var(--rule);
+  }
 
- table.vigenere-table td.vig-active{
-   background: var(--brass-light) !important;
-   font-weight: 700;
- }
+  /* Hover guide: highlight the cell you're on, plus its row and column
+     headers, so it's easy to see which row/column you're tracing.
+     !important is needed on both, since the zebra-striping rule above
+     is otherwise more specific and would silently win on striped rows. */
+  table.vigenere-table td.vig-active{
+    background: var(--ink) !important;
+    color: var(--on-accent) !important;
+    font-weight: 700;
+  }
 
- table.vigenere-table td.head-active{
-   background: var(--terracotta) !important;
-   color: #fff;
- }
+  table.vigenere-table td.head-active{
+    background: var(--ink) !important;
+    color: var(--on-accent) !important;
+  }
 
   /* ---------- Rail fence demo ---------- */
   .rail-demo-scroll{
@@ -500,8 +586,9 @@
   }
 
   .rail-cell.filled{
-    background:var(--brass-light);
+    background:var(--ink);
     border-color:var(--brass);
+    color:var(--on-accent);
     font-weight:700;
   }
 
@@ -522,11 +609,11 @@
     font-size:0.95rem;
   }
 
-  .rail-readout strong{ color:var(--terracotta); }
+  .rail-readout strong{ color:var(--ink); }
 
-  a{ color:var(--terracotta); text-decoration:underline; }
+  a{ color:var(--ink); text-decoration:underline; }
 
   :focus-visible{
-    outline:2px solid var(--terracotta);
+    outline:2px solid var(--ink);
     outline-offset:2px;
   }
