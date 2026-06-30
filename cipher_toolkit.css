@@ -471,10 +471,14 @@
     text-align:center;
   }
 
-  #transGrid{
+  #transEncGrid, #transDecGrid{
     display:grid;
     gap:3px;
     margin-top:0.5rem;
+    width:fit-content;
+  }
+
+  .trans-grid-scroll{
     overflow-x:auto;
   }
 
@@ -704,7 +708,6 @@
     .rail-demo-scroll,
     #transEncGrid,
     #transDecGrid{
-      overflow-x:auto;
       -webkit-overflow-scrolling:touch;
     }
 
